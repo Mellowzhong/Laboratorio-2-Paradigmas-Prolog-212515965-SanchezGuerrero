@@ -10,6 +10,16 @@ get_user(System, Users) :-
 username_exist(NewUser, Users) :-
     member(NewUser, [Users]).
 
+login_exist([true | _]).
+
+login_exist([_ | Rest]) :-
+    login_exist(Rest).   
+
+add_login(User, [User| Rest], [User, true | Rest]).
+
+add_login(User, [OtherUser | Rest], [OtherUser, UpdateUsers]) :-
+    add_login(User, Rest, UpdateUsers).
+
 add_drives_to_drives(NewDrive, Drives, UpdateDrives) :-
     append(Drives, [NewDrive], UpdateDrives).
 
@@ -40,4 +50,12 @@ systemRegister(System, Name, UpdateSystem) :-
     (username_exist(NewUser, Users) ->
         set_user(System, Users, UpdateSystem)
         ;
+        set_user(System, UpdateUsers, UpdateSystem)).
+
+systemLogin(System, User, UpdateSystem) :-
+    get_user(System, Users),
+    (login_exist(Users) ->
+        false
+        ;
+        add_login(User, Users, UpdateUsers),
         set_user(System, UpdateUsers, UpdateSystem)).
