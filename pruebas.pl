@@ -47,15 +47,36 @@ systemRegister(System, Name, UpdateSystem) :-
     create_user(Name, NewUser),
     get_user(System, Users),
     add_user_to_users(NewUser, Users, UpdateUsers),
-    (username_exist(NewUser, Users) ->
-        set_user(System, Users, UpdateSystem)
-        ;
-        set_user(System, UpdateUsers, UpdateSystem)).
+    username_exist(NewUser, Users),
+    set_user(System, Users, UpdateSystem).
+
+    
+systemRegister(System, Name, UpdateSystem) :-
+    create_user(Name, NewUser),
+    get_user(System, Users),
+    add_user_to_users(NewUser, Users, UpdateUsers),
+    set_user(System, UpdateUsers, UpdateSystem).
+
 
 systemLogin(System, User, UpdateSystem) :-
     get_user(System, Users),
-    (login_exist(Users) ->
-        false
-        ;
-        add_login(User, Users, UpdateUsers),
-        set_user(System, UpdateUsers, UpdateSystem)).
+    \+login_exist(Users),
+    add_login(User, Users, UpdateUsers),
+    set_user(System, UpdateUsers, UpdateSystem).
+
+systemLogoutAux(Users, UpdateUsers) :-
+    systemLogoutAux(Users, [], UpdateUsers).
+
+systemLogoutAux([], Acum, Acum).
+
+systemLogoutAux([Head | Tail], Acum, UpdateUsers) :-
+    atom(Head),
+    systemLogoutAux(Tail, Acum, UpdateUsers).
+
+systemLogoutAux([Head | Tail], Acum, UpdateUsers) :-
+    systemLogoutAux(Tail, [Head | Acum], UpdateUsers).
+
+systemLogout(System, UpdateSystem) :-
+    get_user(System, Users),
+    systemLogoutAux(Users, UpdateUsers),
+    set_user(System, UpdateUsers, UpdateSystem).
