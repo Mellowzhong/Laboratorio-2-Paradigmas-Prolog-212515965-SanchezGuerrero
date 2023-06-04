@@ -10,10 +10,19 @@ get_user(System, Users) :-
 username_exist(NewUser, Users) :-
     member(NewUser, [Users]).
 
+drive_exist(_, []) :- false.
+
+drive_exist(Letter, [[Letter |_] | _]).
+
+drive_exist(Letter, [_ | Rest]) :-
+    drive_exist(Letter, Rest).
+
 login_exist([true | _]).
 
 login_exist([_ | Rest]) :-
     login_exist(Rest).   
+
+add_drive_path(Letter, [Letter]).
 
 add_login(User, [User| Rest], [User, true | Rest]).
 
@@ -33,6 +42,10 @@ set_drive(System, UpdateDrives, UpdateSystem) :-
 set_user(System, UpdateUsers, UpdateSystem) :-
     filesystem(Name, Drives, _, Path, Rb, System),
     filesystem(Name, Drives, UpdateUsers, Path, Rb, UpdateSystem).
+
+set_path(System, NewPath, UpdateSystem):-
+    filesystem(Name, Drives, User, _, Rb, Date, System),
+    filesystem(Name, Drives, User, NewPath, Rb, Date, UpdateSystem).
 
 system(SystemName, System) :-
     filesystem(SystemName,[] ,[], [], [], System).
@@ -80,3 +93,9 @@ systemLogout(System, UpdateSystem) :-
     get_user(System, Users),
     systemLogoutAux(Users, UpdateUsers),
     set_user(System, UpdateUsers, UpdateSystem).
+
+systemSwitchDrive(System, Letter, UpdateSystem) :-
+    get_drives(System, Drives),
+    drive_exist(Letter, Drives),
+    add_drive_path(Letter, UpdateDrivePath),
+    set_path(System, UpdateDrivePath, UpdateSystem).
