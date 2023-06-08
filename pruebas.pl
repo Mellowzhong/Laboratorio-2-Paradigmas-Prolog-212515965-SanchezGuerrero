@@ -15,6 +15,8 @@ get_user(System, Users) :-
 get_path(System, Path) :-
     filesystem(_, _, _, Path, _, _, System).
 get_origin_path([Letter | _], Letter).
+get_login_user(Users, LoginUser) :-
+    get_first_element(Users, LoginUser).
 
 username_exist(NewUser, Users) :-
     member(NewUser, [Users]).
@@ -128,21 +130,70 @@ systemMkdir(System, Directory, UpdateSystem) :-
     update_drives(Drives, Path, Directory, UpdateDrives),
     set_drive(System, UpdateDrives, UpdateSystem).
 
-update_drives(Drives, Path, Directory, UpdateDrives):-
+systemMkdir(System, Directory, UpdateSystem) :-
+    get_user(System, Users),
+    login_exist(Users),
+    get_drives(System, Drives),
+    get_path(System, Path),
+    get_current_date_time(Date),
+    get_login_user(Users, LoginUser),
+    set_directory(Directory, Date, LoginUser,NewDirectory),
+    update_drives(Drives, Path, NewDirectory, UpdateDrives),
+    set_drive(System, UpdateDrives, UpdateSystem).
+
+update_drives(Drives, Path, Directory, UpdateDrives) :-
     update_drives_aux(Drives, Path, Directory, [], UpdateDrives).
 
 update_drives_aux([], _, _, Acum, Acum).
 
-update_drives_aux([Drive | Rest], Path, Directory, Acum, UpdateDrives) :-
-    get_origin_path(Path, OriginPath),
-    equal(Drive, OriginPath),
+update_drives_aux([Drive | RestDrive], Path, Directory, Acum, UpdateDrives) :-
+    get_rest_list(Path, RestPath),
+    \+empty_List(RestPath),
+    get_content_drive(Drive, ContentDrive),
+    update_content(ContentDrive, RestPath, Directory, UpdateContent),
+    add_content(Drive, UpdateContent, UpdateDrive),
+    update_drives_aux(RestDrive, Path, Directory, [UpdateDrive | Acum], UpdateDrives).
+
+update_drives_aux([Drive | RestDrive], Path, Directory, Acum, UpdateDrives) :-
+    get_first_element(Path, LetterPath),
+    get_first_element(Drive, LetterDrive),
+    equal_elements(LetterDrive, LetterPath),
     get_content_drive(Drive, ContentDrive),
     add_directory(ContentDrive, Directory, UpdateContent),
     add_content(Drive, UpdateContent, UpdateDrive),
-    add_drives_to_drives(UpdateDrive, Rest, UpdateDrives).
+    update_drives_aux(RestDrive, Path, Directory, [UpdateDrive | Acum], UpdateDrives).
 
-update_drives_aux([Drive | Rest], Path, Directory, Acum, UpdateDrives) :-
-    update_drives_aux(Rest, Path, Directory, [Drive | Acum], UpdateDrives).
+update_content(ContentDrive, RestPath, Directory, UpdateContent) :-
+    update_content_aux(ContentDrive, RestPath, Directory, [],UpdateContent).
+
+update_content_aux(Acum, [], _, _, Acum).
+
+update_content_aux([], [_ | RestPath], Directory, Acum, UpdateContent) :-
+    update_content_aux(Acum, RestPath, Directory, [], UpdateContent).
+
+update_content_aux([ContentDrive | RestContentDrive], Path, Directory, Acum, UpdateContent) :-
+    get_first_element(ContentDrive, FolderName),
+    get_first_element(Path, OriginPath),
+    equal_elements(FolderName, OriginPath),
+    get_rest_list(Path, RestPath),
+    empty_List(RestPath),
+    get_content_drive(ContentDrive, Content),
+    add_directory(Content, Directory, NewContent),
+    add_content(ContentDrive, NewContent, NewUpdateContent),
+    update_content_aux(RestContentDrive, Path, Directory, [NewUpdateContent | Acum], UpdateContent).
+
+update_content_aux([ContentDrive | RestContentDrive], Path, Directory, Acum, UpdateContent) :-
+    get_first_element(ContentDrive, FolderName),
+    get_first_element(Path, OriginPath),
+    equal_elements(FolderName, OriginPath),
+    get_content_drive(ContentDrive, Content),
+    get_rest_list(Path, RestPath),
+    update_content(Content, RestPath, Directory, NewUpdateContent),
+    add_content(ContentDrive, NewUpdateContent, NewNewUpdateContent),
+    update_content_aux(RestContentDrive, Path, Directory, [NewNewUpdateContent | Acum], UpdateContent).
+
+update_content_aux([ContentDrive | RestContentDrive], Path, Directory, Acum, UpdateContent) :-
+    update_content_aux(RestContentDrive, Path, Directory, [ContentDrive | Acum], UpdateContent).
 
 length_path(Length) :-
     Length < 1.
