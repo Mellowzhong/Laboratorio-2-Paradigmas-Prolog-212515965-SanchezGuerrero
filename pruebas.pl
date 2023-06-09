@@ -141,6 +141,16 @@ systemMkdir(System, Directory, UpdateSystem) :-
     update_drives(Drives, Path, NewDirectory, UpdateDrives),
     set_drive(System, UpdateDrives, UpdateSystem).
 
+systemCd(System, DirectoryCd, UpdateSystem) :-
+    get_user(System, Users),
+    get_path(System, Path),
+    login_exist(Users),
+    split_string(DirectoryCd, "/", "", ListDirectory),
+    reverse_list(Path, ReversePath),
+    update_path(ListDirectory, ReversePath, UpdatePath),
+    reverse_list(UpdatePath, NewUpdatePath),
+    set_path(System, NewUpdatePath, UpdateSystem).
+
 update_drives(Drives, Path, Directory, UpdateDrives) :-
     update_drives_aux(Drives, Path, Directory, [], UpdateDrives).
 
@@ -195,6 +205,26 @@ update_content_aux([ContentDrive | RestContentDrive], Path, Directory, Acum, Upd
 update_content_aux([ContentDrive | RestContentDrive], Path, Directory, Acum, UpdateContent) :-
     update_content_aux(RestContentDrive, Path, Directory, [ContentDrive | Acum], UpdateContent).
 
+update_path([], Acum, Acum).
+
+update_path([FirstListDirectory | RestListDirectory], Path, UpdatePath) :-
+    equal_elements(FirstListDirectory, ""),
+    reverse_list(Path, ReversePath),
+    set_path_root(ReversePath, NewPath),
+    update_path(RestListDirectory, NewPath, UpdatePath).
+
+update_path([FirstListDirectory | RestListDirectory], Path, UpdatePath) :-
+    equal_elements(FirstListDirectory, ".."),
+    set_path_return(Path, NewPath),
+    update_path(RestListDirectory, NewPath, UpdatePath).
+
+update_path([FirstListDirectory | RestListDirectory], Path, UpdatePath) :-
+    equal_elements(FirstListDirectory, "."),
+    update_path(RestListDirectory, Path, UpdatePath).
+
+update_path([FirstListDirectory | RestListDirectory], Path, UpdatePath) :-
+    update_path(RestListDirectory, [FirstListDirectory | Path], UpdatePath).
+
 length_path(Length) :-
     Length < 1.
 
@@ -205,3 +235,11 @@ length_list([_ | Rest], Length) :-
     Length is LengthTail + 1.
 
 equal(Element, Element).
+
+reverse_list(Lista, ReverseList) :-
+    reverse_list_aux(Lista, [], ReverseList).
+
+reverse_list_aux([], Acum, Acum).
+
+reverse_list_aux([Head|Cola], Acum, ReverseList) :-
+    reverse_list_aux(Cola, [Head|Acum], ReverseList).
