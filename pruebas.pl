@@ -2,6 +2,9 @@ filesystem(Name, Drives, User, Path, Rb, [Name, Drives, User, Path, Rb]).
 create_drive(Letter, Name, Capacity, Content, [Letter, Name, Capacity, Content]).
 create_user(Name, [Name]).
 set_directory(Directory, Date, [Directory, Date, [], []]).
+file(NameAndType, Content, [NameAndType, Type, Content]) :-
+    split_string(NameAndType, ".", "", [ _| ListType]),
+    get_first_element(ListType, Type).
 
 get_content_drive([_, _, _, Content], Content).
 get_current_date_time(Date) :-
@@ -150,6 +153,30 @@ systemCd(System, DirectoryCd, UpdateSystem) :-
     update_path(ListDirectory, ReversePath, UpdatePath),
     reverse_list(UpdatePath, NewUpdatePath),
     set_path(System, NewUpdatePath, UpdateSystem).
+
+systemAddFile(System, _, UpdateSystem) :-
+    get_user(System, Users),
+    login_exist(Users),
+    get_drives(System, Drives),
+    get_path(System, Path),
+    length_list(Path, Length),
+    length_path(Length),
+    set_drive(System, Drives, UpdateSystem).
+
+systemAddFile(System, File, UpdateSystem) :-
+    get_user(System, Users),
+    login_exist(Users),
+    get_drives(System, Drives),
+    get_path(System, Path),
+    get_current_date_time(Date),
+    get_login_user(Users, LoginUser),
+    set_file(File, Date, LoginUser,NewFile),
+    update_drives(Drives, Path, NewFile, UpdateDrives),
+    set_drive(System, UpdateDrives, UpdateSystem).
+
+systemAddFile(System, _, UpdateSystem) :-
+    get_drives(System, Drives),
+    set_drive(System, Drives, UpdateSystem).
 
 update_drives(Drives, Path, Directory, UpdateDrives) :-
     update_drives_aux(Drives, Path, Directory, [], UpdateDrives).
