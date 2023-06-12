@@ -1,1 +1,1 @@
-# Laboratorio-2-Paradigmas-Prolog
+# prolog
