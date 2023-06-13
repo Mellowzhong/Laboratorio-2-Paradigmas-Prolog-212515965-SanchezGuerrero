@@ -1,4 +1,4 @@
-:- module(tda_fecha, [get_current_date_time/1]).
+:- module(tda_fecha_212515965_sanchez, [get_current_date_time/1]).
 
 %-------------------Selectores-----------------------
 %Descripcion: Obtiene la fecha actual

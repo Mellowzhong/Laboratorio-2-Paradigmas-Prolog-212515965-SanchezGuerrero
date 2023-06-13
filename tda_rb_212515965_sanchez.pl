@@ -1,15 +1,38 @@
-:- module(tda_rb, [get_rb/2, set_rb/3, move_element_to_rb/3, update_rb/4, type_of_file/1]).
-:- use_module(tda_drive).
+:- module(tda_rb_212515965_sanchez, [get_rb/2, set_rb/3, move_element_to_rb/3, update_rb/4, type_of_file/1]).
+:- use_module(tda_drive_212515965_sanchez).
 
+%-----------------------Representacion-----------------------
+%Se presenta el TDA Recycle bin, el cual corresponde tal y como indica su nombre a una representacion
+%de la papelera de reciclaje, el cual contiene los archivos borrados del sistema. Esta representacion
+%esta dada por una serie de funciones las cuales tienen como objetivo mover archivos hacia la papelera de reciclaje.
+
+%-------------------Selectores-----------------------
+%Descripcion: Obtiene el rb del sistema
+%tipo de algoritmo: No aplica
+%Dom: list
+%Rec: list
 get_rb([_, _, _, _, Rb, _], Rb).
 
+%-------------------Modificadores-----------------------
+%Descripcion: Actualiza el sistema con el nuevo rb
+%tipo de algoritmo: No aplica
+%Dom: list - list
+%Rec: list
 set_rb(System, UpdateRb, UpdateSystem) :-
     filesystem(Name, Drives, Users, Path, _, Date, System),
     filesystem(Name, Drives, Users, Path, UpdateRb, Date, UpdateSystem).
 
+%Descripcion: Mueve el file dado al rb
+%tipo de algoritmo: No aplica
+%Dom: list - string
+%Rec: list
 move_element_to_rb(Rb, Delfile, UpdateRb) :-
     add_directory(Rb, Delfile, UpdateRb).
-%-----------------------------otras funciones-----------------
+
+%Descripcion: Acutaliza los drives borrando el file 
+%tipo de algoritmo: Backtracking
+%Dom: list - list - string
+%Rec: list
 update_rb(Drives, Path, Delfile, UpdateRb) :-
     update_rb_aux(Drives, Path, Delfile, [], UpdateRb).
     
@@ -49,7 +72,10 @@ update_rb_aux([Drive | RestDrive], Path, Delfile, Acum, UpdateRb) :-
     add_content(Drive, UpdateContentRb, NewUpdateContentRb),
     update_rb_aux(RestDrive, Path, Delfile, [NewUpdateContentRb | Acum], UpdateRb).
 
-
+%Descripcion: Actualiza el contenido dado a travez del path
+%tipo de algoritmo: Backtracking
+%Dom: list - list - string
+%Rec: list
 update_content_rb(ContentDrive, RestPath, Delfile, UpdateContentRb) :-
     update_content_rb_aux(ContentDrive, RestPath, Delfile, [], UpdateContentRb).
 
@@ -82,6 +108,10 @@ update_content_rb_aux([ContentDrive | RestContentDrive], Path, Delfile, Acum, Up
 update_content_rb_aux([ContentDrive | RestContentDrive], Path, Directory, Acum, UpdateContentRb) :-
     update_content_rb_aux(RestContentDrive, Path, Directory, [ContentDrive | Acum], UpdateContentRb).
 
+%Descripcion: Borra un directory del contenido dado
+%tipo de algoritmo: Bcktracking
+%Dom: list - string
+%Rec: list
 del_directory(ContentDrive, Delfile, UpdateContentRb) :-
     del_directory_aux(ContentDrive, Delfile, [], UpdateContentRb).
 
@@ -95,7 +125,10 @@ del_directory_aux([FirstFolder | RestFolder], Delfile, Acum, UpdateContentRb) :-
 del_directory_aux([FirstFolder | RestFolder], Delfile, Acum, UpdateContentRb) :-
     del_directory_aux(RestFolder, Delfile, [FirstFolder | Acum], UpdateContentRb).
 
-%terminar el del file
+%Descripcion: Borra un file del contenido dado
+%tipo de algoritmo: Backtracking
+%Dom: list - string
+%Rec: list
 del_file(ContentDrive, Delfile, UpdateContentRb) :-
     del_file_aux(ContentDrive, Delfile, [], UpdateContentRb).
 
@@ -109,6 +142,11 @@ del_file_aux([FirstContentDrive | RestContentDrive], Delfile, Acum, UpdateConten
 del_file_aux([FirstContentDrive | RestContentDrive], Delfile, Acum, UpdateContentRb) :-
     del_file_aux(RestContentDrive, Delfile, [FirstContentDrive | Acum], UpdateContentRb).
 
+%-----------------------------otras funciones-----------------
+%Descripcion: Verifica que el delfile es un file o folder
+%tipo de algoritmo: No aplica
+%Dom: list
+%Rec: bool
 type_of_file(Delfile) :-
     split_string(Delfile, ".", "", List),
     length_list(List, Length),

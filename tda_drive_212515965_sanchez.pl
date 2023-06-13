@@ -1,18 +1,15 @@
-:- module(tda_drive, [create_drive/5,set_drive/3, drive_exist/2, get_drives/2, get_content_drive/2, add_directory/3, add_folder/3, add_content/3, add_drives_to_drives/3, update_drives/4, update_content/4]).
+:- module(tda_drive_212515965_sanchez, [create_drive/5,set_drive/3, drive_exist/2, get_drives/2, get_content_drive/2, add_directory/3, add_folder/3, add_content/3, add_drives_to_drives/3, update_drives/4, update_content/4]).
+%-----------------------Representacion-----------------------
+%Se presenta el TDA Drives, el cual corresponde a tal y como indica su nombre a una representacion del drive,
+%el drive es el lugar donde se almacenan las unidades, las carpetas o archivos varios. Esta representacion esta dada
+%por una serie de funciones las cuales tendrian el fin de encontrar o modificar cosas de los drives.
+
 %-------------------Constructores-----------------------
 %Descripcion: Crea un drive con la informacion dada
 %tipo de algoritmo: No aplicada
 %Dom: string - string - int - list
 %Rec: list
 create_drive(Letter, Name, Capacity, Content, [Letter, Name, Capacity, Content]).
-
-%Descripcion: Actualiza el sistema con el nuevo drive dado
-%tipo de algoritmo: No aplicado
-%Dom: list - list
-%Rec: list
-set_drive(System, UpdateDrives, UpdateSystem) :-
-    filesystem(Name, _, User, Path, Rb, Date, System),
-    filesystem(Name, UpdateDrives, User, Path, Rb, Date, UpdateSystem).
 
 %-------------------Pertenencia-----------------------
 %Descripcion: Verifica si el drive existe
@@ -21,7 +18,7 @@ set_drive(System, UpdateDrives, UpdateSystem) :-
 %Rec: bool
 drive_exist(_, []) :- false.
 
-drive_exist(Letter, [[Letter |_] | _]).
+drive_exist(Letter, [[Letter |_] | _]) :- true.
 
 drive_exist(Letter, [_ | Rest]) :-
     drive_exist(Letter, Rest).
@@ -54,6 +51,14 @@ get_drives(System, Drives) :-
 %Rec: list
 get_content_drive([_, _, _, Content], Content).
 %-------------------Modificadores-----------------------
+%Descripcion: Actualiza el sistema con el nuevo drive dado
+%tipo de algoritmo: No aplicado
+%Dom: list - list
+%Rec: list
+set_drive(System, UpdateDrives, UpdateSystem) :-
+    filesystem(Name, _, User, Path, Rb, Date, System),
+    filesystem(Name, UpdateDrives, User, Path, Rb, Date, UpdateSystem).
+
 %Descripcion: Agrega un nuevo directorio al contenido
 %tipo de algoritmo: No aplicado
 %Dom: list - string
@@ -112,6 +117,8 @@ update_drives_aux([Drive | RestDrive], Path, Directory, Acum, UpdateDrives) :-
     add_content(Drive, UpdateContent, UpdateDrive),
     update_drives_aux(RestDrive, Path, Directory, [UpdateDrive | Acum], UpdateDrives).
 
+update_drives_aux([Drive | RestDrive], Path, Directory, Acum, UpdateDrives) :-
+    update_drives_aux(RestDrive, Path, Directory, [Drive | Acum], UpdateDrives).
 %Descripcion: Agrega el directorio al contenido del drive a travez del path
 %tipo de algoritmo: Backtracking
 %Dom: list - list - list
