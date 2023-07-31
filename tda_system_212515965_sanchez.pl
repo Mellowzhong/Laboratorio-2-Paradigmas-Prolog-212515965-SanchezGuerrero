@@ -10,6 +10,14 @@
 %esta dada por una lista con estos elementos los cuales se ven en el constructor demonimado system y set-system.
 
 %-------------------Constructores-----------------------
+%Descripcion: Crea un nuevo sistema
+%tipo de algoritmo: No aplica
+%Dom: string
+%Rec:list
+system(SystemName, System) :-
+    get_current_date_time(Date),
+    filesystem(SystemName,[] ,[], [], [], Date, System).
+
 %Descripcion: Crea un sistema con un nombre, drives, users, path, rb, date
 %tipo de algoritmo: No aplica
 %Dom: string - list - list - list - list - string
@@ -20,22 +28,19 @@ filesystem(Name, Drives, User, Path, Rb, Date, [Name, Drives, User, Path, Rb, Da
 %tipo de algoritmo:No aplica
 %Dom: string - string - string
 %Rec: list
-set_directory(Directory, Date, LoginUser, [Directory, Date, LoginUser, []]).
+set_directory(Name, Type, Date, LoginUser, Content, [Name, Type, Date, LoginUser, Content]).
 
 %Descripcion: Crea un file con el nombre, tipo y un contenido
 %tipo de algoritmo: No aplica
 %Dom: string - list
 %Rec: list
-file(NameAndType, Content, [NameAndType, Type, Content]) :-
-    split_string(NameAndType, ".", "", [ _| ListType]),
-    get_first_element(ListType, Type).
+file(NameAndType, Content, [NameAndType, "file", Content]).
 
 %Descripcion: Crea un file con las caracteristicas del file pasado, la fecha de creacion y usuario logeado
 %tipo de algoritmo: No aplica
 %Dom: list - string - list - 
 %Rec: list
-set_file(File, Date, LoginUser, List) :-
-    append(File, [LoginUser, Date], List).
+set_file([NameAndType, Type, Content], Date, LoginUser, [NameAndType, Type, Date, LoginUser, Content]).
 
 %-------------------Selectores-----------------------
 %Descripcion: Obtiene el primer elemento de la lista
@@ -44,27 +49,16 @@ set_file(File, Date, LoginUser, List) :-
 %Rec: string
 get_first_element([Element | _], Element).
 
-%Descripcion: Obtiene el resto de una lista
-%tipo de algoritmo: No aplica
-%Dom: list
-%Rec: list
-get_rest_list([_ |Rest], Rest).
-%-------------------Modificadores-----------------------
-%Descripcion: Agrega un nuevo contenido al anterior
-%tipo de algoritmo: No aplicado
+%Descripcion: Obtiene todos los nombres de un contenido dado
+%tipo de algoritmo: Backtracking
 %Dom: list - list
 %Rec: list
-add_content_to_content(NewContent, RestContentDrive, NewUpdateContent) :-
-    append(NewContent, [RestContentDrive], NewUpdateContent).
+get_all_names([], []) :- !.
 
-%Descripcion: Crea un nuevo sistema
-%tipo de algoritmo: No aplica
-%Dom: string
-%Rec:list
-system(SystemName, System) :-
-    get_current_date_time(Date),
-    filesystem(SystemName,[] ,[], [], [], Date, System).
-
+get_all_names([First | Rest], [FirstName | Acum]) :-
+    get_first_element(First, FirstName),
+    get_all_names(Rest, Acum).
+%-------------------Modificadores-----------------------
 %Descripcion: Agrega un nuevo drive al sistema
 %tipo de algoritmo: No aplica 
 %Dom: list - string - string - int
@@ -128,8 +122,8 @@ systemMkdir(System, Directory, UpdateSystem) :-
     get_drives(System, Drives),
     get_path(System, Path),
     get_current_date_time(Date),
-    get_login_user(Users, LoginUser),
-    set_directory(Directory, Date, LoginUser,NewDirectory),
+    isLogged(Users, LoginUser),
+    set_directory(Directory, "folder", Date, LoginUser, [], NewDirectory),
     update_drives(Drives, Path, NewDirectory, UpdateDrives),
     set_drive(System, UpdateDrives, UpdateSystem).
 
@@ -151,60 +145,99 @@ systemCd(System, DirectoryCd, UpdateSystem) :-
 %tipo de algoritmo: No aplica
 %Dom: list - string
 %Rec: No aplica
-systemAddFile(System, _, UpdateSystem) :-
-    get_user(System, Users),
-    login_exist(Users),
-    get_drives(System, Drives),
-    get_path(System, Path),
-    length_list(Path, Length),
-    length_path(Length),
-    set_drive(System, Drives, UpdateSystem).
-
 systemAddFile(System, File, UpdateSystem) :-
     get_user(System, Users),
     login_exist(Users),
     get_drives(System, Drives),
     get_path(System, Path),
     get_current_date_time(Date),
-    get_login_user(Users, LoginUser),
+    isLogged(Users, LoginUser),
     set_file(File, Date, LoginUser,NewFile),
     update_drives(Drives, Path, NewFile, UpdateDrives),
     set_drive(System, UpdateDrives, UpdateSystem).
-
-systemAddFile(System, _, UpdateSystem) :-
-    get_drives(System, Drives),
-    set_drive(System, Drives, UpdateSystem).
 
 %Descripcion: Borra un archivo o folder del sistema
 %tipo de algoritmo: No aplica
 %Dom: list - string
 %Rec: list
-systemDel(System, Delfile, UpdateSystem) :-
+systemDel(System, DelFile, UpdateSystem) :-
     get_path(System, Path),
     get_drives(System, Drives),
-    update_rb(Drives, Path, Delfile, UpdateDrives),
+    get_from_drives(Drives, Path, DelFile, Directorys),
+    update_rb(Drives, Path, DelFile, UpdateDrives),
     set_drive(System, UpdateDrives, NewUpdateSystem),
-    get_rb(NewUpdateSystem, Rb),
-    move_element_to_rb(Rb, Delfile, UpdateRb),
-    set_rb(NewUpdateSystem, UpdateRb, UpdateSystem).
+    set_rb(NewUpdateSystem, Directorys, UpdateSystem).
 
-%Descripcion: Copia un archivo del sistema
+%Descripcion: Copia un archivo del sistema a una ruta especifica
 %tipo de algoritmo: No aplica
-%Dom: list - string - string
+%Dom: list - string - string - list
 %Rec: list
 systemCopy(System, CopyFile, TargetPath, UpdateSystem) :-
     get_drives(System, Drives),
     get_path(System, Path),
-    get_user(System, Users),
-    get_current_date_time(Date),
-    get_login_user(Users, LoginUser),
-    set_directory(CopyFile, Date, LoginUser, NewDirectory),
-    split_string(TargetPath, "/", "", ListDirectory),
-    reverse_list(Path, ReversePath),
-    update_path(ListDirectory, ReversePath, UpdatePath),
-    update_drives(Drives, UpdatePath, NewDirectory, UpdateDrives),
+    get_from_drives(Drives, Path, CopyFile, Directorys),
+    split_string(TargetPath, "/", "", ListTargetPath),
+    update_drives_by_directorys(Drives, ListTargetPath, Directorys, UpdateDrives),
     set_drive(System, UpdateDrives, UpdateSystem).
 
+%Descripcion: Mueve un archivo del sistema a una ruta especifica
+%tipo de algoritmo: No aplica
+%Dom: list - string - string - list
+%Rec: list
+systemMove(System, MoveFile, TargetPath, UpdateSystem) :-
+    get_path(System, Path),
+    get_drives(System, Drives),    
+    get_from_drives(Drives, Path, MoveFile, Directorys),
+    \+empty_List(Directorys),
+    split_string(TargetPath, "/", "", ListTargetPath),
+    update_drives_by_directorys(Drives, ListTargetPath, Directorys, UpdateDrives),
+    update_rb(UpdateDrives, Path, MoveFile, NewDrives),
+    set_drive(System, NewDrives, UpdateSystem).
+
+%Descripcion: Renombra el archivo dado con el nombre dado
+%tipo de algoritmo: No aplica
+%Dom: list - string - string - list
+%Rec: list
+systemRen(System, RenFile, NewName, UpdateSystem):-
+    get_path(System, Path),
+    get_drives(System, Drives),
+    rename(Drives, Path, RenFile, NewName, UpdateDrives),
+    set_drive(System, UpdateDrives, UpdateSystem).
+
+%Descripcion: Muestra informacion dependiendo de los parametros dados
+%tipo de algoritmo: No aplica
+%Dom: list - list - list
+%Rec: list
+systemDir(_, ActionList, String) :-
+    equal_elements(ActionList, ["/?"]),
+    list_to_string(["[]", "/a"], String).
+
+systemDir(System, ActionList, String) :-
+    empty_List(ActionList),
+    get_path(System, Path),
+    get_drives(System, Drives),
+    get_from_drives(Drives, Path, "*", Directorys),
+    get_all_names(Directorys, Names),
+    filter_by_security(Names, FilterDirectorys),
+    list_to_string(FilterDirectorys, String).
+
+systemDir(System, ActionList, String) :-
+    get_path(System, Path),
+    get_drives(System, Drives),
+    get_from_drives(Drives, Path, "*", Directorys),
+    get_all_names(Directorys, Names),
+    equal_elements(ActionList, ["/a"]),
+    list_to_string(Names, String).
+
+%Descripcion: Formatea una unidad con un nuevo nombre
+%tipo de algoritmo: No aplica
+%Dom: list - string - string - list
+%Rec: list
+systemFormat(System, Letter, NewName, UpdateSystem) :-
+    get_drives(System, Drives),
+    format_drive(Drives, Letter, NewName, UpdateDrives),
+    set_drive(System, UpdateDrives, UpdateSystem).
+    
 %-------------------Otras funciones-----------------------
 %Descripcion: Auxiliar del logout
 %tipo de algoritmo: Backtracking
@@ -221,23 +254,6 @@ systemLogoutAux_2([Head | Tail], Acum, UpdateUsers) :-
 
 systemLogoutAux_2([_ | Tail], Acum, UpdateUsers) :-
     systemLogoutAux_2(Tail, Acum, UpdateUsers).
-
-%Descripcion: Verifica que el largo dado sea menos a uno
-%tipo de algoritmo: No aplica
-%Dom: int
-%Rec: bool
-length_path(Length) :-
-    Length < 1.
-
-%Descripcion: Entrega el largo de una lista
-%tipo de algoritmo: Backtracking
-%Dom: list
-%Rec: int
-length_list([], 0).
-
-length_list([_ | Rest], Length) :- 
-    length(Rest, LengthTail), 
-    Length is LengthTail + 1.
 
 %Descripcion: Invirte una lista
 %tipo de algoritmo: Backtracking
@@ -268,3 +284,34 @@ empty_List([]) :- true.
 %Dom: list or string
 %Rec: bool
 equal_elements(Element, Element).
+
+%Descripcion: Comprueba si el nombre dado tiene el atributo de hide
+%tipo de algoritmo: No aplica
+%Dom: string
+%Rec: boolean
+is_hide(Name) :-
+    atom_chars(Name, ['.' | _]).
+
+%Descripcion: Filtra los nombres para agregar obtener solos los que no sean hide
+%tipo de algoritmo: Backtracking
+%Dom: list - list
+%Rec: list
+filter_by_security([], []) :- !.
+
+filter_by_security([First | Rest], [First | Acum]) :-
+    \+is_hide(First),
+    filter_by_security(Rest, Acum).
+
+filter_by_security([_ | Rest], FilterDirectorys) :-
+    filter_by_security(Rest, FilterDirectorys).
+
+%Descripcion: Convierte una lista a un string uniendola con ","
+%tipo de algoritmo: recursion
+%Dom: list - string
+%Rec: string
+list_to_string([], '').
+
+list_to_string([First | RestList], String) :-
+    list_to_string(RestList, Rest),
+    string_concat(First, ", ", NewString),
+    string_concat(NewString, Rest, String).

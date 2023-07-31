@@ -1,4 +1,4 @@
-:- module(tda_user_212515965_sanchez, [create_user/2, set_user/3, username_exist/2, login_exist/1, get_user/2, get_login_user/2,add_user_to_users/3, add_login/3]).
+:- module(tda_user_212515965_sanchez, [isLogged/2, create_user/2, set_user/3, username_exist/2, login_exist/1, get_user/2,add_user_to_users/3, add_login/3]).
 
 %-----------------------Representacion-----------------------
 %Se presenta el TDA User, el cual corresponde tal y como indica su nombre a una representacion
@@ -43,19 +43,10 @@ get_user(System, Users) :-
 %tipo de algoritmo: No aplica
 %Dom: list 
 %Rec: string
+isLogged([ User | [true | _]], User).
 
-get_login_user(Users, LoginUser) :-
-    get_login_user_aux(Users, LoginUser, []).
-
-get_login_user_aux([], Acum, Acum).
-
-get_login_user_aux([User | RestUser], LoginUser, _) :-
-    get_first_element(RestUser, UserRest),
-    equal_elements(true, UserRest),
-    get_login_user_aux(RestUser, LoginUser, User).
-
-get_login_user_aux([_ | Rest], LoginUser, Acum) :-
-    get_login_user_aux(Rest, LoginUser, Acum).
+isLogged([_ | Cola], User) :-
+    isLogged(Cola, User).
 %-------------------Modificadores-----------------------
 %Descripcion: Actualiza el sistema con los nuevos usuarios
 %tipo de algoritmo: No aplicado
@@ -80,3 +71,9 @@ add_login(User, [User| Rest], [User, true | Rest]).
 
 add_login(User, [OtherUser | Rest], [OtherUser | UpdateUsers]) :-
     add_login(User, Rest, UpdateUsers).
+
+%Descripcion: Verifica si dos elementos son iguales
+%tipo de algoritmo: No aplica
+%Dom: list or string
+%Rec: bool
+equal_elements(Element, Element).

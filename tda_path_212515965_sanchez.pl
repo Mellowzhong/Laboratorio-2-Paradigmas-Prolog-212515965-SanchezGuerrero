@@ -1,4 +1,4 @@
-:- module(tda_path_212515965_sanchez, [set_path/3, set_path_return/2, set_path_root/2, get_path/2, get_origin_path/2, switch_path/2, update_path/3]).
+:- module(tda_path_212515965_sanchez, [set_path/3, set_path_return/2, set_path_root/2, get_path/2, switch_path/2, update_path/3]).
 
 %-----------------------Representacion-----------------------
 %Se presenta el TDA Path, el cual corresponde a tal y como indica su nombre a una representacion del path,
@@ -13,12 +13,6 @@
 %Rec: list
 get_path(System, Path) :-
     filesystem(_, _, _, Path, _, _, System).
-
-%Descripcion: Obtiene el origen del path entregado
-%tipo de algoritmo: No aplicado
-%Dom: list
-%Rec: string
-get_origin_path([Letter | _], Letter).
 %-------------------Modificadores-----------------------
 %Descripcion: Borra el primer elemento del path entregado
 %tipo de algoritmo: No aplicada
@@ -27,7 +21,7 @@ get_origin_path([Letter | _], Letter).
 set_path_return(Path, UpdatePath) :-
     del_first_element(Path, UpdatePath).    
 
-%Descripcion: Actualiza el drive a la raiz
+%Descripcion: Actualiza el path a la raiz
 %tipo de algoritmo: No aplica
 %Dom: list
 %Rec: list
@@ -71,16 +65,4 @@ update_path([FirstListDirectory | RestListDirectory], Path, UpdatePath) :-
 
 update_path([FirstListDirectory | RestListDirectory], Path, UpdatePath) :-
     update_path(RestListDirectory, [FirstListDirectory | Path], UpdatePath).
-
-%-------------------Otras funciones-----------------------
-%Descripcion: Verifica si es primer elemento es una raiz o un folder
-%tipo de algoritmo: No aplicada
-%Dom: list
-%Rec: bool
-path_get_origin([Path | _]) :-
-    split_string(Path, "/", "", ListPath),
-    get_origin_path(ListPath, OriginPath),
-    atom_chars(OriginPath, ListOriginPath),
-    length_list(ListOriginPath, Length),
-    Length =< 1.
     
